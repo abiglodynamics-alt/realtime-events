@@ -1,6 +1,6 @@
-# Event Management Platform
+# EventHub - Event Management Platform
 
-A comprehensive event management platform similar to Eventee, built with Laravel. This platform provides features for event organization, agenda management, speaker profiles, attendee registration with QR code check-in, and live interaction capabilities including Q&A and polls.
+A comprehensive event management platform similar to Eventee, built with Laravel. Features include event creation, agenda management, speaker profiles, attendee registration with QR codes, and real-time interaction through Q&A and polls.
 
 ## Features
 
@@ -8,185 +8,210 @@ A comprehensive event management platform similar to Eventee, built with Laravel
 - Title, description, image, location, timezone
 - Start/end date management
 - Organizer assignment (user/team)
+- Auto-generated unique slugs
 - Published/draft status
-- Unique slug generation
 
 ### 2. Agenda & Sessions
 - Sessions organized under events
-- Track-based organization
-- Day-based scheduling
-- Speaker assignments
-- Session types (keynote, talk, workshop, panel, break, other)
-- Live streaming support
-- Recording URLs
+- Day and track assignments
+- Speaker assignments (many-to-many)
+- Session types: keynote, talk, workshop, panel, break
+- Live streaming URL support
 
 ### 3. Speakers
-- Profile image and bio
-- Social media links (Twitter, LinkedIn, GitHub, Website)
-- Job title and company
-- Many-to-many relationship with sessions
-- Moderator designation
+- Profile images and bios
+- Social links (Twitter, LinkedIn, GitHub, website)
+- Job titles and companies
+- Multiple session assignments
 
 ### 4. Attendees
 - Extended user model
-- RSVP status management (pending, confirmed, cancelled, waitlist)
+- RSVP status management (pending/confirmed/cancelled/waitlist)
 - QR code generation for check-in
-- Check-in tracking
-- Ticket type support
+- Ticket types and special requirements
 
 ### 5. Live Interaction
-- Real-time broadcasting via Laravel Echo/WebSockets
+- Real-time broadcasting via Laravel Echo/Pusher
 - Q&A system with upvoting
-- Live polls with multiple choice support
-- Real-time notifications
+- Live polls (single/multiple choice)
+- Push notifications
 
-## Database Schema
+## Quick Start
 
-The platform includes the following tables:
+### Prerequisites
+- PHP 8.1+
+- Composer
+- MySQL/PostgreSQL
+- Node.js & NPM (optional, for assets)
 
-- `users` - User accounts with profile information
-- `events` - Event details and metadata
-- `tracks` - Event tracks for session organization
-- `event_days` - Multi-day event support
-- `sessions` - Individual sessions/talks
-- `speakers` - Speaker profiles
-- `session_speaker` - Pivot table for session-speaker relationships
-- `attendees` - Event registrations
-- `polls` - Interactive polls
-- `poll_options` - Poll answer options
-- `poll_votes` - Poll vote records
-- `questions` - Q&A questions
-- `notifications` - System notifications
+### Installation
+
+1. **Clone and install dependencies**
+```bash
+cd /workspace
+composer install
+```
+
+2. **Configure environment**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+3. **Update database configuration in `.env`**
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=eventhub
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+4. **Run migrations**
+```bash
+php artisan migrate
+```
+
+5. **Seed sample data (optional)**
+```bash
+php artisan db:seed
+```
+
+6. **Start the development server**
+```bash
+php artisan serve
+```
+
+Visit `http://localhost:8000` to view the application.
+
+## Available Pages
+
+### Public Pages
+- **Home** (`/`) - Landing page with featured events
+- **Events List** (`/events`) - Browse all published events
+- **Event Detail** (`/events/{slug}`) - Full event page with agenda, speakers, Q&A, polls
+- **Speakers** (`/speakers`) - Speaker directory
+
+### Key Features on Event Page
+- **Overview Tab** - Event details, description, organizer info
+- **Agenda Tab** - Sessions organized by day and track
+- **Speakers Tab** - All speakers for the event
+- **Q&A Tab** - Live question submission and voting
+- **Polls Tab** - Active polls with real-time results
 
 ## API Endpoints
 
-### Public Endpoints
-- `GET /api/events` - List published upcoming events
-- `GET /api/events/{event}` - Get event details
-
-### Protected Endpoints (Authentication Required)
-
-#### Event Management
-- `POST /api/events` - Create new event
-- `PUT /api/events/{event}` - Update event
-- `DELETE /api/events/{event}` - Delete event
-
-#### Attendee/RSVP
-- `POST /api/events/{event}/rsvp` - Register for an event
-- `GET /api/my-events` - Get user's registered events
-- `GET /api/attendees/{attendee}/qr-code` - Download QR code
-- `POST /api/attendees/{attendee}/cancel` - Cancel registration
-- `POST /api/check-in` - Check in attendee (organizer only)
-- `POST /api/attendees/{attendee}/confirm` - Confirm registration (organizer only)
-
-#### Q&A
-- `POST /api/questions` - Ask a question
-- `GET /api/questions` - Get questions for event/session
-- `GET /api/questions/unanswered` - Get unanswered questions
-- `POST /api/questions/{question}/upvote` - Upvote a question
-- `POST /api/questions/{question}/answer` - Answer a question
-- `POST /api/questions/{question}/toggle-visibility` - Hide/show question
-
-#### Polls
-- `POST /api/polls` - Create a poll
-- `GET /api/polls/active` - Get active polls
-- `GET /api/polls/{poll}` - Get poll results
-- `POST /api/polls/{poll}/vote` - Vote on a poll
-- `POST /api/polls/{poll}/toggle-active` - Activate/deactivate poll
-- `POST /api/polls/{poll}/toggle-results` - Toggle results visibility
-
-## Broadcasting Events
-
-The platform broadcasts the following real-time events:
-
-- `SessionStarted` - Notifies when a session begins
-- `QuestionAsked` - Broadcasts new questions to the channel
-- `PollResultsUpdated` - Updates poll results in real-time
-
-Channels:
-- `event.{event_id}` - Public channel for event updates
-- `session.{session_id}` - Private channel for session-specific updates
-
-## Installation
-
-1. Clone the repository
-2. Install dependencies: `composer install`
-3. Copy `.env.example` to `.env` and configure database
-4. Run migrations: `php artisan migrate`
-5. Set up broadcasting driver (Pusher or Laravel WebSockets)
-6. Generate application key: `php artisan key:generate`
-
-## Configuration
-
-### Broadcasting
-Configure `config/broadcasting.php` to use either:
-- Pusher (recommended for production)
-- Laravel WebSockets (self-hosted alternative)
-
-### Queue
-Configure queue driver in `.env`:
+### Events
 ```
-QUEUE_CONNECTION=redis
+GET    /api/events              - List all events
+POST   /api/events              - Create event
+GET    /api/events/{id}         - Get event details
+PUT    /api/events/{id}         - Update event
+DELETE /api/events/{id}         - Delete event
 ```
 
-### Storage
-For QR code storage, ensure proper disk configuration:
+### Sessions
 ```
-FILESYSTEM_DISK=public
+GET    /api/events/{id}/sessions     - List sessions
+POST   /api/events/{id}/sessions     - Create session
 ```
 
-## Model Relationships
+### Q&A
+```
+GET    /api/events/{id}/questions           - Get questions
+POST   /api/events/{id}/questions           - Ask question
+POST   /api/events/{id}/questions/{id}/vote - Vote on question
+```
+
+### Polls
+```
+GET    /api/events/{id}/polls          - Get active polls
+POST   /api/events/{id}/polls          - Create poll
+POST   /api/events/{id}/polls/{id}/vote - Vote on poll
+```
+
+### Attendees
+```
+POST   /api/events/{id}/attendees           - Register attendee
+GET    /api/events/{id}/attendees/{id}/qr   - Get QR code
+POST   /api/attendees/checkin               - Check-in attendee
+```
+
+## Real-Time Features
+
+### Broadcasting Configuration
+
+For real-time Q&A and polls, configure broadcasting in `.env`:
 
 ```
-User
-├── hasMany → Event (as organizer)
-├── hasOne → Speaker
-└── hasMany → Attendee
-
-Event
-├── belongsTo → User (organizer)
-├── hasMany → Track
-├── hasMany → EventDay
-├── hasMany → Session
-├── hasMany → Attendee
-├── hasMany → Poll
-└── hasMany → Question
-
-Session
-├── belongsTo → Event
-├── belongsTo → Track
-├── belongsTo → EventDay
-├── belongsToMany → Speaker
-├── hasMany → Question
-└── hasMany → Poll
-
-Speaker
-├── belongsTo → User
-└── belongsToMany → Session
-
-Attendee
-├── belongsTo → User
-├── belongsTo → Event
-├── hasMany → Question
-└── hasMany → PollVote
-
-Poll
-├── belongsTo → Event
-├── belongsTo → Session
-├── hasMany → PollOption
-└── hasMany → PollVote
-
-PollOption
-├── belongsTo → Poll
-└── hasMany → PollVote
-
-Question
-├── belongsTo → Session
-├── belongsTo → Event
-├── belongsTo → Attendee
-└── belongsTo → User (answerer)
+BROADCAST_DRIVER=pusher
+PUSHER_APP_ID=your-app-id
+PUSHER_APP_KEY=your-app-key
+PUSHER_APP_SECRET=your-app-secret
+PUSHER_APP_CLUSTER=mt1
 ```
+
+Or use Laravel WebSockets:
+```bash
+composer require beyondcode/laravel-websockets
+php artisan vendor:publish --provider="BeyondCode\LaravelWebSockets\WebSocketsServiceProvider" --tag="migrations"
+php artisan migrate
+php artisan websockets:serve
+```
+
+## Database Schema
+
+The application includes 13 main tables:
+- `users` - User accounts
+- `events` - Event information
+- `event_days` - Multi-day event structure
+- `tracks` - Parallel session tracks
+- `sessions` - Individual sessions/talks
+- `speakers` - Speaker profiles
+- `session_speaker` - Session-speaker pivot
+- `attendees` - Event registrations
+- `questions` - Q&A questions
+- `polls` - Live polls
+- `poll_options` - Poll choices
+- `poll_votes` - Poll votes
+- `notifications` - Event notifications
+
+## Frontend Views
+
+Created Blade templates:
+- `layouts/app.blade.php` - Main layout with navigation
+- `home.blade.php` - Landing page
+- `events/index.blade.php` - Events listing
+- `events/show.blade.php` - Event detail page with tabs
+
+## Customization
+
+### Branding
+Update colors in views by modifying Tailwind classes:
+- Primary: `indigo-600`
+- Secondary: `purple-600`
+
+### Features
+Enable/disable features in config or by commenting routes.
+
+## Testing
+
+```bash
+php artisan test
+```
+
+## Security Notes
+
+- Always validate and sanitize user input
+- Use authorization checks for organizer actions
+- Enable HTTPS in production
+- Keep dependencies updated
 
 ## License
 
 MIT License
+
+---
+
+**Preview the application:** Run `php artisan serve` and visit `http://localhost:8000`
